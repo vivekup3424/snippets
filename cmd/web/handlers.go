@@ -1,10 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
+	"strconv"
 )
+
+type requestBod struct {
+	title   string
+	content string
+	expires int
+}
 
 func (app *Application) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -52,19 +61,39 @@ func (app *Application) snippetViewById(w http.ResponseWriter, r *http.Request) 
 	id := r.PathValue("id")
 	//idNum := strconv.Atoi(id)
 	str := fmt.Sprintf("Displaying the snippets of user with id = %s\n", id)
+	idNum, _ := strconv.Atoi(id)
+	snippets, err := app.snippets.Get(idNum)
+	if err != nil {
+		http.Error(w, "Bad shit happened", http.StatusBadGateway)
+	}
 	w.Write([]byte(str))
+	fmt.Fprintf(w, "%+v", snippets)
 	app.InfoLogger.Println(w.Header())
 }
 
 // Add a snippetCreate handler function.
 func (app *Application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-	//I dont need this since Go 1.22 handles this itself
-	//if r.Method != "POST" {
-	// 	w.Header().Set("Allow","POST")
-	//	w.WriteHeader(405)
-	//	w.Write([]byte("Method Not Allowed"))
-	//
+	// Create some variables holding dummy data. We'll remove these later on
+	// during the build.
+	var body []byte
+	r.Body.Read(body)
+	v := new(requestBod)
+	json.Unmarshal(body, v)
+	log.Println(body)
+	w.Write([]byte(fmt.Sprintf("title = %s\n", v.content)))
+	// Pass the data to the SnippetModel.Insert() method, receiving the
+	// ID of the new record back.
+	//id, err := app.snippets.Insert(title, content, expires)
+	//if err != nil {
+	//	app.ErrorLogger.Println(err)
+	//	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	//	return
 	//}
+	//
+	//// Redirect to the snippet view page.
+	//http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+	//
+	// Set response header and write response body.
 	w.Header().Set("Content-Type", "text/plain")
 	w.Write([]byte("Create a new snippet...\n"))
 	app.InfoLogger.Println(w.Header())

@@ -1,4 +1,4 @@
 build:
-	@go build -o bin/app cmd/api/main.go
+	@go build -o bin/app ./cmd/web
 run:
 	@go run ./cmd/web
